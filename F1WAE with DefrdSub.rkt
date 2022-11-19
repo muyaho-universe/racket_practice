@@ -15,7 +15,7 @@
   [mtSub]
   [aSub (name symbol?)
         (value number?)
-        (saved DefrdSub?)])
+        (ds DefrdSub?)])
 
 ; [contract] parse-fd: sexp -> FunDef
 ; [purpose]
@@ -42,10 +42,10 @@
 (define (interp f1wae fundefs ds)
   (type-case F1WAE f1wae
     [num (n) n]
-    [add (l r) (+ (interp l fundefs) (interp r fundefs))]
-    [sub (l r) (- (interp l fundefs) (interp r fundefs))]
+    [add (l r) (+ (interp l fundefs ds) (interp r fundefs ds))]
+    [sub (l r) (- (interp l fundefs ds) (interp r fundefs ds))]
     [with (i v e) (interp e fundefs (aSub i (interp v fundefs ds) ds))]
-    [id (s) (error 'interp "free identifier")]
+    [id (s) (lookup s ds)]
     [app (ftn arg)
          (local
            [(define a-fundef (lookup-fundef ftn fundefs))]
@@ -53,7 +53,7 @@
                           fundefs
                           (aSub (fundef-arg-name a-fundef) 
                           (interp arg fundefs ds)
-                          mtSub)))]))
+                          (mtSub))))]))
 (fundef 'f 'x (add (id 'x) (num 3)))
 
 
@@ -66,6 +66,16 @@
      (if (symbol=? name (fundef-fun-name (first fundefs)))
          (first fundefs)
          (lookup-fundef name (rest fundefs)))]))
+;lookup: symbol DefrdSub -> F1WAE
+(define (lookup name ds)
+  (type-case DefrdSub ds
+    [mtSub () (error 'lookup "no binding for idnetifier")]
+    [aSub (bound-name bound-value rest-ds)
+          (if(symbol=? bound-name name)
+             bound-value
+             (lookup name rest-ds))]))
 
 
-(test (interp (parse '{f 1}) (list (parse-fd '{deffun (f x) {+ x 3}})) (mtSub)) 4) 
+(parse '{f 1})
+;(interp (parse '{f 1}))
+;(test (interp (parse '{f 1}) (list (parse-fd '{deffun (f x) {+ x 3}})) (mtSub)) 4) 

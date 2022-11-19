@@ -22,7 +22,7 @@
     [(list f a) (app (parse f) (parse a))]
     [else (error 'parse "bad syntax: ~a" sexp)]))
 
-(parse '{fun {x} {+ x 1}})
+(parse '{{fun {x} {+ x 1}} 2})
 
 (test (parse '{{fun {x} {+ x 1}} 10})
                     (app (fun 'x (add (id 'x) (num 1))) (num 10)))
@@ -70,3 +70,7 @@
 (interp(parse '{+ 2 10}))
 (parse '{+ {+ 1 2} 10})
 (interp (parse '{+ {+ 1 2} 10}))
+
+(parse '{fun {x} {+ x 1}})
+(parse '{{fun {x} {+ x 1}} 2})
+(interp (parse '{{fun {x} {+ x 1}} 2}))

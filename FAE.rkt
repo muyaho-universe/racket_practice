@@ -12,11 +12,27 @@
   [mtSub]
   [aSub (name symbol?)
         (value number?)
-        (saved DefrdSub?)])
+        (ds DefrdSub?)])
 
 (define-type FAE-Value
   [numV (n number?)]
   [closureV (param symbol?) (body FAE?) (ds DefrdSub?)])
+
+
+; [contract] lookup: symbol DefrdSub -> number
+(define (lookup name ds)
+  (type-case DefrdSub ds
+    [mtSub () (error 'lookup "free identifier")]
+    [aSub (i v saved) (if(symbol=? i name)
+                         v
+                         (lookup name saved))]))
+
+; [contract] num-op: (number number -> number) -> (FWAE FWAE -> FWAE)
+(define (num-op op)
+  (lambda (x y)
+    (num (op (num-n x) (num-n y)))))
+(define num+ (num-op +))
+(define num- (num-op -))
 
 ; [contract] interp: FAE DefrdSub -> FAE
 (define (interp fae ds)
@@ -27,31 +43,14 @@
     ;[with (i v e) (interp (subst e i (interp v)))]
     [id (s) (lookup s ds)]
     [fun (p b) (closureV p b ds)]
-    [app (f a)
-         (local
-           [(define f-val (interp f ds))
-            (define a-val (interp a ds))]
+    [app (f a) (local [(define f-val (interp f ds))
+                       (define a-val (interp a ds))]
            (interp (closureV-body f-val)
                    (aSub (closureV-param f-val)
                          a-val
                          (closureV-ds f-val))))]))
 
-; [contract] num-op: (number number -> number) -> (FWAE FWAE -> FWAE)
-(define (num-op op)
-  (lambda (x y)
-    (num (op (num-n x) (num-n y)))))
-(define num+ (num-op +))
-(define num- (num-op -))
 
-
-
-; [contract] lookup: symbol DefrdSub -> number
-(define (lookup name ds)
-  (type-case DefrdSub ds
-    [mtSub () (error 'lookup "free identifier")]
-    [aSub (i v saved) (if(symbol=? i name)
-                         v
-                         (lookup name saved))]))
 
 ; [contract] parse: sexp -> FWAE
 ; [purpose]
@@ -65,9 +64,18 @@
     [(list f a) (app (parse f) (parse a))]
     [else (error 'parse "bad syntax: ~a" sexp)]))
 
-;(parse '{{fun {x} {+ x 10}} 33})
+(parse '{{fun {x} {+ x 10}} 33})
 
-(parse '{{with {y 7}} y})
+(parse '{fun {x} {+ x 99}})
+(parse '{{fun {x} {+ x 99}} 10})
+;(interp (parse '{fun {x} {+ x 99}}) )
+(parse '{+ {+ 1 1} 2})
+;(interp (parse '{+ {+ 1 1} 2}))
+
+(parse '{+ 1 2})
+(interp (parse '{+ 1 2}))
+;(interp (parse '{{fun {x} {+ x 99}} 10}))
+;(parse '{{with {y 7}} y})
 
 ;(interp (parse '{{with {y 10}} {+ y 10}}))
 ;(interp (parse '{{fun {x} {+ 1 x}} 10}))
