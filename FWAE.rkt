@@ -66,4 +66,7 @@
                        (fun id (subst body idtf val)))]))
 
 (parse '{fun {x} {+ x 10}})
-(interp(parse '{fun {x} {+ x 10}}))
+(interp(parse '{{fun {x} {+ x 10}} 33}))
+(interp(parse '{+ 2 10}))
+(parse '{+ {+ 1 2} 10})
+(interp (parse '{+ {+ 1 2} 10}))
